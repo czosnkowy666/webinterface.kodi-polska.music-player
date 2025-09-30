@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Kodi Polska Music Web Player</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="shortcut icon" href="favicon.png" type="image/png">
+  <style>
+    body { font-family: sans-serif; margin: 18px; background:#fff; color:#111 }
+    h1 { margin:0 0 12px 0; }
+    .panel { border:1px solid #ddd; padding:10px; min-height:260px; overflow:auto; border-radius:6px; background:#fafafa }
+    .row { display:flex; align-items:center; justify-content:space-between; padding:6px 4px; border-bottom:1px solid #eee; }
+    button { padding:6px 10px; margin-left:8px; }
+    input[type="text"]{ padding:6px; width:320px; }
+    .muted { color:#666; font-size:0.9em }
+
+
+  @media screen and (min-width: 1408px) {
+    main {
+      max-width: 1344px;
+    }
+  }
+
+  main {
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .list-row {
+    border-bottom: 1px solid #666 ;
+  }
+
+  .list-row:hover {
+    background-color: #666;
+  }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kodi Polska 🎵 Music Player</h1>
+    <ul>
+      <li id="nav-artist">Artists</li>
+      <li id="nav-albums">Albums</li>
+      <li id="nav-songs">Songs</li>
+      <li id="nav-playlists">Playlists</li>
+      <li id="nav-files">Files</li>
+    </ul>
+  </header>
+  <main>
+  <div id="breadcrumbs">
+    //
+  </div>
+  <div id="panels">
+  </div>
+
+  <div style="margin-top:12px">
+    <audio id="player" controls></audio>
+    <span id="status" style="margin-left:14px" class="muted"></span>
+  </div>
+  </main>
+<template id="tpl-panel">
+    <div class="panel">
+      <h2 class="panel-title"></h2>
+      <div class="panel-list">Loading ...</div>
+    </div>
+</template> 
+
+<template id="tpl-list-row">
+    <div class="list-row">
+      <h3 class="list-title"></h3>
+      <div class="list-action"></div>
+    </div>
+</template>
+
+<script>
+
+  const RPC_PATH = '/jsonrpc';
+  const player = document.getElementById("player");
+
+
+  function rpc(method, params = {}) {
+    return fetch(RPC_PATH, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(j => {
+      if (j.error) throw new Error(j.error.message || JSON.stringify(j.error));
+      return j.result;
+    });
+  }
+
+  function cleanPanels() {
+    const panels = document.getElementById('panels');
+    while (panels.firstChild) {
+      panels.removeChild(panels.lastChild);
+    }
+  }
+
+  async function loadArtists() {
+    setStatus('loading artists…');
+    try {
+      const res = await rpc('AudioLibrary.GetArtists', { properties: ['thumbnail'], limits: { start:0, end:5000 } });
+      const list = (res && res.artists) || [];
+
+      if (!list.length) { setStatus('No artists'); return; }
+      const templateRow = document.getElementById('tpl-list-row');
+      const templatePanel = document.getElementById('tpl-panel');
+      const clonePanel = document.importNode(templatePanel.content, true);
+      const panelList = clonePanel.querySelector('.panel-list');
+      cleanPanels();
+      
+      panelList.textContent = '';
+      clonePanel.querySelector('.panel-title').textContent = 'Artists'
+      const panels = document.getElementById('panels');
+
+      list.forEach(a => {
+        const clone = document.importNode(templateRow.content, true);
+        const title = clone.querySelector('.list-title')
+        title.textContent = a.artist;
+        title.onclick = () => loadAlbumsForArtist(a.artistid, a.artist);
+        panelList.appendChild(clone);
+      });
+      panels.appendChild(clonePanel)
+
+      setStatus('');
+    } catch (e) {
+      console.error(e); setStatus('Error: ' + e.message);
+    }
+  }
+
+  async function loadAlbumsForArtist(artistId, artistName) {
+    setStatus('loading albums…');
+    try {
+      const res = await rpc('AudioLibrary.GetAlbums', { properties: ['thumbnail','year'], limits:{ start:0, end:1000 }, filter: {artistid: artistId} });
+      const list = (res && res.albums) || [];
+      
+      if (!list.length) { setStatus('No albums'); return; }
+      const templateRow = document.getElementById('tpl-list-row');
+      const templatePanel = document.getElementById('tpl-panel');
+      const clonePanel = document.importNode(templatePanel.content, true);
+      const panelList = clonePanel.querySelector('.panel-list')
+      cleanPanels();
+
+      panelList.textContent = '';
+      clonePanel.querySelector('.panel-title').textContent = 'Albums of ' + artistName;
+      const panels = document.getElementById('panels');
+
+      list.forEach(a => {
+        const clone = document.importNode(templateRow.content, true);
+        const title = clone.querySelector('.list-title')
+        title.textContent =  (a.label || 'Unknown') + (a.year ? ' • ' + a.year : '');
+        title.onclick = () => loadSongs(a.albumid, a.label, artistId, artistName);
+        panelList.appendChild(clone);
+
+      });
+      panels.appendChild(clonePanel)
+
+      setStatus('');
+    } catch (e) {
+      console.error(e); setStatus('Error: ' + e.message);
+    }
+  }
+
+  async function loadSongs(albumId, albumName, artistId, artistName) {
+    setStatus('loading songs…');
+    try {
+      const params = { properties: ['title','file','thumbnail','duration','artist','album','track'], limits:{ start:0, end:10000 }, filter: {albumid: albumId} };
+      const res = await rpc('AudioLibrary.GetSongs', params);      
+      const list = (res && res.songs) || [];
+
+      if (!list.length) { setStatus('No songs'); return; }
+      const templateRow = document.getElementById('tpl-list-row');
+      const templatePanel = document.getElementById('tpl-panel');
+      const clonePanel = document.importNode(templatePanel.content, true);
+      const panelList = clonePanel.querySelector('.panel-list')
+      cleanPanels();
+
+      panelList.textContent = '';
+      clonePanel.querySelector('.panel-title').textContent = artistName + ', album: ' + albumName;
+      const panels = document.getElementById('panels');
+      
+      list.forEach(s => {
+        const clone = document.importNode(templateRow.content, true);
+        const title = clone.querySelector('.list-title')
+        title.textContent =  (s.track ? (s.track + '. ') : '') + (s.title || 'Unknown');
+        title.onclick = () => playSong(s.file, s.title, artistName);
+        panelList.appendChild(clone);
+      });
+      panels.appendChild(clonePanel)
+
+      setStatus('');
+    } catch (e) {
+      console.error(e); setStatus('Error: ' + e.message);
+    }
+  }
+
+  async function playSong(songFile, title, artist) {
+    setStatus('starting plating song');
+    player.src = '/vfs/' + encodeURIComponent(songFile);
+    player.play();
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: title,
+        artist: artist,
+//        artwork: [
+//          { src: artwork, sizes: "512x512", type: "image/png" }
+//        ]
+      });
+
+      navigator.mediaSession.setActionHandler("play", () => player.play());
+      navigator.mediaSession.setActionHandler("pause", () => player.pause());
+      navigator.mediaSession.setActionHandler("stop", () => player.pause());    
+    }
+
+  }
+
+  async function togglePlayPause() {
+    setStatus('play/puse toggle');
+  }
+  async function stop() {
+    setStatus('stop playing music');
+  }
+
+  player.onended = async () => {
+    console.log("Song finished, notifying Kodi…");
+    //rpc("Player.Stop", { playerid: 0 }); 
+  };
+
+  player.onerror = () => {
+    const err = player.error;
+    if (err) {
+      console.error("Audio error:", err.code);
+      setStatus('Audio error (' + err.code + ')')
+      /*
+        1: MEDIA_ERR_ABORTED      – loading aborted by user
+        2: MEDIA_ERR_NETWORK      – network error
+        3: MEDIA_ERR_DECODE       – decoding error
+        4: MEDIA_ERR_SRC_NOT_SUPPORTED – unsupported format or bad URL
+      */
+    }
+  };
+
+  function setStatus(t){ document.getElementById('status').textContent = t || ''; }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadArtists();
+    document.getElementById('nav-artist').addEventListener('click', loadArtists);
+  });
+</script>
+</body>
+</html>
