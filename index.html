@@ -4,7 +4,8 @@
   <meta charset="utf-8" />
   <title>Kodi Polska Music Web Player</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="shortcut icon" href="favicon.png" type="image/png">
+  <link rel="shortcut icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.svg" sizes="any"/>
   <style>
     body { font-family: sans-serif; margin: 18px; background:#fff; color:#111 }
     h1 { margin:0 0 12px 0; }
@@ -137,7 +138,7 @@
   async function loadAlbumsForArtist(artistId, artistName) {
     setStatus('loading albums…');
     try {
-      const res = await rpc('AudioLibrary.GetAlbums', { properties: ['thumbnail','year'], limits:{ start:0, end:1000 }, filter: {artistid: artistId} });
+      const res = await rpc('AudioLibrary.GetAlbums', { properties: ['thumbnail','year','artist'], limits:{ start:0, end:1000 }, filter: {artistid: artistId} });
       const list = (res && res.albums) || [];
       
       if (!list.length) { setStatus('No albums'); return; }
@@ -155,7 +156,7 @@
         const clone = document.importNode(templateRow.content, true);
         const title = clone.querySelector('.list-title')
         title.textContent =  (a.label || 'Unknown') + (a.year ? ' • ' + a.year : '');
-        title.onclick = () => loadSongs(a.albumid, a.label, artistId, artistName);
+        title.onclick = () => loadSongs(a.albumid, a.label, artistId, a.artist);
         panelList.appendChild(clone);
 
       });
