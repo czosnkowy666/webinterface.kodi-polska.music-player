@@ -17,6 +17,10 @@
     <website>https://github.com/czosnkowy666/webinterface.kodi-polska.music-player/wiki</website>
     <summary lang="en_GB">Simple Kodi Music Web UI</summary>
     <description lang="en_GB">Browse and play Kodi's music library from a browser</description>
+    <assets>
+      <icon>resources/icon.png</icon>
+      <fanart>resources/fanart.jpg</fanart>
+    </assets>    
   </extension>
 
   <extension point="xbmc.webinterface" library="resources/web/index.html">
