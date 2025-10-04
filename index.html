@@ -6,52 +6,18 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="shortcut icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.svg" sizes="any"/>
-  <style>
-    body { font-family: sans-serif; margin: 18px; background:#fff; color:#111 }
-    h1 { margin:0 0 12px 0; }
-    .panel { border:1px solid #ddd; padding:10px; min-height:260px; overflow:auto; border-radius:6px; background:#fafafa }
-    .row { display:flex; align-items:center; justify-content:space-between; padding:6px 4px; border-bottom:1px solid #eee; }
-    button { padding:6px 10px; margin-left:8px; }
-    input[type="text"]{ padding:6px; width:320px; }
-    .muted { color:#666; font-size:0.9em }
-
-
-  @media screen and (min-width: 1408px) {
-    main {
-      max-width: 1344px;
-    }
-  }
-
-  main {
-    margin: 0 auto;
-    position: relative;
-  }
-
-  .list-row {
-    border-bottom: 1px solid #666 ;
-  }
-
-  .list-row:hover {
-    background-color: #666;
-  }
-
-  </style>
+  <link rel="stylesheet" href="./css/main.css" />
 </head>
 <body>
   <header>
-    <h1>Kodi Polska 🎵 Music Player</h1>
-    <ul>
+    <h1 id="main-title">Loading</h1>
+    <ul class="navigation">
       <li id="nav-artist">Artists</li>
-      <li id="nav-albums">Albums</li>
-      <li id="nav-songs">Songs</li>
       <li id="nav-playlists">Playlists</li>
       <li id="nav-files">Files</li>
     </ul>
   </header>
   <main>
-  <div id="breadcrumbs">
-    //
-  </div>
   <div id="panels">
   </div>
 
@@ -60,9 +26,12 @@
     <span id="status" style="margin-left:14px" class="muted"></span>
   </div>
   </main>
-<template id="tpl-panel">
+  <footer>
+    <div>Kodi Polska 🎵 Music Player <a href="https://github.com/czosnkowy666/webinterface.kodi-polska.music-player" target="_blank" class="version">0.0.1</a></div>
+  </footer>
+  <template id="tpl-panel">
     <div class="panel">
-      <h2 class="panel-title"></h2>
+      <div class="panel-header"></div>
       <div class="panel-list">Loading ...</div>
     </div>
 </template> 
@@ -103,6 +72,49 @@
     }
   }
 
+  function setMainTitle(artist, artistsId, album) {
+    console.log('setting title', artist, artistsId, album)
+
+    title = document.querySelector('#main-title')
+    while (title.firstChild) {
+      title.removeChild(title.lastChild);
+    }
+
+    if (artist !== '' && artistsId === null) {
+      title.textContent = artist
+      return 
+    }
+
+    if (artist === '') {
+      artist = '[Missing Tag]'
+    }
+    if (artist !== '' && artistsId !== null) {
+      const art = document.createElement("span");
+      art.textContent = artist
+      art.className = 'title-artist no-wrap';
+      art.onclick = () => loadAlbumsForArtist(artistsId, artist);
+      title.appendChild(art)
+    }
+
+    if (album === null) {
+      return
+    }
+
+    if (album === "") {
+      album = '[Missing Tag]'      
+    }
+
+    const separator = document.createElement("span");
+    separator.textContent = ' : '
+    title.appendChild(separator)
+
+    const alb = document.createElement("span");
+    alb.textContent = album
+    alb.className = 'title-album no-wrap';
+    title.appendChild(alb)
+
+  }
+
   async function loadArtists() {
     setStatus('loading artists…');
     try {
@@ -117,7 +129,6 @@
       cleanPanels();
       
       panelList.textContent = '';
-      clonePanel.querySelector('.panel-title').textContent = 'Artists'
       const panels = document.getElementById('panels');
 
       list.forEach(a => {
@@ -128,6 +139,7 @@
         panelList.appendChild(clone);
       });
       panels.appendChild(clonePanel)
+      setMainTitle('Artists', null, null)
 
       setStatus('');
     } catch (e) {
@@ -149,19 +161,18 @@
       cleanPanels();
 
       panelList.textContent = '';
-      clonePanel.querySelector('.panel-title').textContent = 'Albums of ' + artistName;
       const panels = document.getElementById('panels');
 
       list.forEach(a => {
         const clone = document.importNode(templateRow.content, true);
         const title = clone.querySelector('.list-title')
         title.textContent =  (a.label || 'Unknown') + (a.year ? ' • ' + a.year : '');
-        title.onclick = () => loadSongs(a.albumid, a.label, artistId, a.artist);
+        title.onclick = () => loadSongs(a.albumid, a.label, artistId, a.artist[0]);
         panelList.appendChild(clone);
 
       });
       panels.appendChild(clonePanel)
-
+      setMainTitle(artistName, artistId, null)
       setStatus('');
     } catch (e) {
       console.error(e); setStatus('Error: ' + e.message);
@@ -183,17 +194,17 @@
       cleanPanels();
 
       panelList.textContent = '';
-      clonePanel.querySelector('.panel-title').textContent = artistName + ', album: ' + albumName;
       const panels = document.getElementById('panels');
       
       list.forEach(s => {
         const clone = document.importNode(templateRow.content, true);
         const title = clone.querySelector('.list-title')
-        title.textContent =  (s.track ? (s.track + '. ') : '') + (s.title || 'Unknown');
-        title.onclick = () => playSong(s.file, s.title, artistName);
+        title.textContent =  (s.track ? (s.track + '. ') : '') + (s.title || 'Unknown') + ' - ' + s.artist[0];
+        title.onclick = () => playSong(s.file, s.title, artistName, s.songid);
         panelList.appendChild(clone);
       });
       panels.appendChild(clonePanel)
+      setMainTitle(artistName, artistId, albumName)
 
       setStatus('');
     } catch (e) {
@@ -201,9 +212,13 @@
     }
   }
 
-  async function playSong(songFile, title, artist) {
+  async function playSong(songFile, title, artist, id) {
     setStatus('starting plating song');
     player.src = '/vfs/' + encodeURIComponent(songFile);
+    player.dataset.title = title;
+    player.dataset.artist = artist;
+    player.dataset.file = songFile;
+    player.dataset.songid = id;
     player.play();
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -228,9 +243,31 @@
     setStatus('stop playing music');
   }
 
+  function getDateTime() {
+    const today = new Date();
+    let day = today.getDate();
+    let month = today.getMonth() + 1;
+    let year = today.getFullYear();
+    let hours = today.getHours();
+    let miuntes = today.getMinutes();
+    let seconds = today.getSeconds();
+    day = day < 10 ? '0' + day : day;
+    month = month < 10 ? '0' + month : month;
+    hours = hours < 10 ? '0' + hours : hours;
+    miuntes = miuntes < 10 ? '0' + miuntes : miuntes;
+    seconds = seconds < 10 ? '0' + seconds : seconds;
+    date = `${year}-${month}-${day} ${hours}:${miuntes}:${seconds}`
+    return date
+  }
+
+  async function bumpPlayCount(songId) {
+    const resGet = await rpc('AudioLibrary.GetSongDetails',  {"songid": Number(songId), "properties": ["album", "albumid", "artist","lastplayed","playcount"]});
+    count = Number(resGet['songdetails']['playcount']) + 1
+    const resSet = await rpc('AudioLibrary.SetSongDetails',  {"songid": Number(songId), "lastplayed": getDateTime(), "playcount": count});
+  }
+
   player.onended = async () => {
-    console.log("Song finished, notifying Kodi…");
-    //rpc("Player.Stop", { playerid: 0 }); 
+    bumpPlayCount(player.dataset.songid)
   };
 
   player.onerror = () => {
