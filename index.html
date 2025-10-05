@@ -13,8 +13,8 @@
     <h1 id="main-title">Loading</h1>
     <ul class="navigation">
       <li id="nav-artist">Artists</li>
-      <li id="nav-playlists">Playlists</li>
-      <li id="nav-files">Files</li>
+      <li id="nav-playlist">Playlists</li>
+      <li id="nav-file">Files</li>
     </ul>
   </header>
   <main>
@@ -236,12 +236,88 @@
 
   }
 
-  async function togglePlayPause() {
-    setStatus('play/puse toggle');
+  async function loadPlaylist() {
+    // as kodi doesn't support acutla playlist managment and only have api to add or remove songs form current queue 
+    // it need to be local in localsotrage playlist that could be exposrted to m3u and then uploaded to kodi
+    // maybe it can read existing playlist from kodi though file api not it will be in rad only mode 
+    setStatus('loading playlist…');
+
+    cleanPanels();
+    setMainTitle("Playlists", null, null)
   }
-  async function stop() {
-    setStatus('stop playing music');
+
+  function supportedFiles(file) {
+    if (file.endsWith('.mp3')) {
+      return true
+    }
+    if (file.endsWith('.opus')) {
+      return true
+    }
+
+    return false
+
   }
+
+  async function loadFiles(folderName, parnetFolder) {
+    setStatus('loading files…');
+    console.log(parnetFolder)
+
+    try {
+      let res = {};
+      let list = []
+      if(!parnetFolder) {
+        res = await rpc('AudioLibrary.GetSources', {});
+        list = (res && res.sources) || [];
+        
+      } else {        
+        res = await rpc('Files.GetDirectory', {directory: parnetFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist"],sort: {method:"none",order:"ascending"}});
+        list = (res && res.files) || [];
+      }
+
+      if (!list.length) { setStatus('No folders/files'); return; }
+
+      const templateRow = document.getElementById('tpl-list-row');
+      const templatePanel = document.getElementById('tpl-panel');
+      const clonePanel = document.importNode(templatePanel.content, true);
+      const panelList = clonePanel.querySelector('.panel-list');
+      cleanPanels();
+      
+      panelList.textContent = '';
+      const panels = document.getElementById('panels');
+
+      list.forEach(a => {
+        const clone = document.importNode(templateRow.content, true);
+        const title = clone.querySelector('.list-title')
+        let titleStr = '';
+        if (a.type && a.type === 'song') {
+          titleStr = a.artist[0] + " - " + a.label
+        } else if (a.type && a.type === 'album') {
+          titleStr = a.artist[0] + " - " + a.label
+        } else {
+          titleStr = a.label
+        }
+        title.textContent = titleStr;
+        if (supportedFiles(a.file)) {
+          title.onclick = () => playSong(a.file, a.title, a.artist[0], a.id);
+        } else {
+          title.onclick = () => loadFiles(a.label, a.file);
+        }
+        panelList.appendChild(clone);
+      });
+      panels.appendChild(clonePanel)
+      setMainTitle('Files', null, null)
+
+      setStatus('');
+    } catch (e) {
+      console.error(e); setStatus('Error: ' + e.message);
+    }
+
+    // {"jsonrpc":"2.0","method":"Files.GetSources","params":["music"],"id":8}
+
+    // 
+
+  }
+
 
   function getDateTime() {
     const today = new Date();
@@ -289,6 +365,8 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadArtists();
     document.getElementById('nav-artist').addEventListener('click', loadArtists);
+    document.getElementById('nav-playlist').addEventListener('click', loadPlaylist);
+    document.getElementById('nav-file').addEventListener('click', (e) => { loadFiles() });
   });
 </script>
 </body>
