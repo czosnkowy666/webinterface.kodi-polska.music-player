@@ -24,20 +24,23 @@ body {
     font-size: 1.125rem;
     line-height: 2.0rem;
     font-family: Helvetica, Arial, sans-serif;
-	font-weight: 400;
-    font-style: normal;    
+    font-weight: 400;
+    font-style: normal;
     background: #18191b;
     color: #eee;
-    height: 100%;   
+    height: 100%;
 }
 
-header, footer {
+header,
+footer {
     margin: 0 auto;
 }
+
 main {
     margin: 0 auto;
     position: relative;
 }
+
 audio {
     width: 100%;
     background: #18191b;
@@ -65,7 +68,7 @@ ul.navigation li:first-child {
 }
 
 .list-row {
-    border-bottom: 1px solid #6a747a ;
+    border-bottom: 1px solid #6a747a;
     padding: 0.75rem;
 }
 
@@ -83,21 +86,44 @@ ul.navigation li:first-child {
 }
 
 
-h1 { 
+h1 {
     margin: 0.75rem 0;
     font-size: 2rem;
     font-weight: 800;
 }
 
-.panel { border:1px solid #6a747a; padding:10px; min-height:260px; overflow:auto; border-radius:6px; background:#212426; }
+.panel {
+    border: 1px solid #6a747a;
+    padding: 10px;
+    min-height: 260px;
+    overflow: auto;
+    border-radius: 6px;
+    background: #212426;
+    margin-bottom: 10rem;
+}
 
-.row { display:flex; align-items:center; justify-content:space-between; padding:6px 4px; border-bottom:1px solid #6a747a; }
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 4px;
+    border-bottom: 1px solid #6a747a;
+}
 
-button { padding:6px 10px; margin-left:8px; }
+button {
+    padding: 6px 10px;
+    margin-left: 8px;
+}
 
-input[type="text"]{ padding:6px; width:320px; }
+input[type="text"] {
+    padding: 6px;
+    width: 320px;
+}
 
-.muted { color:#666; font-size:0.9em }
+.muted {
+    color: #666;
+    font-size: 0.9em
+}
 
 .no-wrap {
     white-space: nowrap;
@@ -108,17 +134,29 @@ input[type="text"]{ padding:6px; width:320px; }
     cursor: pointer;
 }
 
+#footer-panel {
+    max-width: inherit;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    background-color: #454c50;
+}
+
 @media screen and (min-width: 1408px) {
     main {
         max-width: 1344px;
     }
-    header, footer {
+
+    header,
+    footer {
         max-width: 1344px;
     }
 }
 
 @media screen and (max-width: 1407px) {
-    header, footer  {
+
+    header,
+    footer {
         margin-left: 1rem;
         margin-right: 1rem;
     }

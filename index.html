@@ -20,14 +20,15 @@
   <main>
   <div id="panels">
   </div>
-
-  <div style="margin-top:12px">
-    <audio id="player" controls></audio>
-    <span id="status" style="margin-left:14px" class="muted"></span>
-  </div>
   </main>
   <footer>
+    <div id="footer-panel">
+      <div id="player-panel">
+        <audio id="player" controls></audio>
+        <span id="status" style="margin-left:14px" class="muted"></span>
+      </div>
     <div>Kodi Polska 🎵 Music Player <a href="https://github.com/czosnkowy666/webinterface.kodi-polska.music-player" target="_blank" class="version">0.0.1</a></div>
+    </div>
   </footer>
   <template id="tpl-panel">
     <div class="panel">
@@ -200,6 +201,11 @@
         const clone = document.importNode(templateRow.content, true);
         const title = clone.querySelector('.list-title')
         title.textContent =  (s.track ? (s.track + '. ') : '') + (s.title || 'Unknown') + ' - ' + s.artist[0];
+        title.dataset.file = s.file;
+        title.dataset.title = s.title;
+        title.dataset.artistName = artistName;
+        title.dataset.songId = s.songid;
+
         title.onclick = () => playSong(s.file, s.title, artistName, s.songid);
         panelList.appendChild(clone);
       });
@@ -335,11 +341,29 @@
     date = `${year}-${month}-${day} ${hours}:${miuntes}:${seconds}`
     return date
   }
+  function playNext(songId) {
+    console.log("current song was:" + songId)
+    const currentRow =  document.querySelector('div:has(> h3[data-song-id="' + songId + '"])');
+    if (!currentRow) {
+      console.log("missing current row")
+      return
+    }
+
+    const nextRow = currentRow.nextElementSibling;
+    if (!nextRow) {
+      console.log("missing next row")
+      return 
+    }
+    const songDataElem = nextRow.querySelector('h3')
+    songDataElem.click();
+    console.log("next song id: " + songDataElem.dataset.songId)
+  }
 
   async function bumpPlayCount(songId) {
     const resGet = await rpc('AudioLibrary.GetSongDetails',  {"songid": Number(songId), "properties": ["album", "albumid", "artist","lastplayed","playcount"]});
     count = Number(resGet['songdetails']['playcount']) + 1
     const resSet = await rpc('AudioLibrary.SetSongDetails',  {"songid": Number(songId), "lastplayed": getDateTime(), "playcount": count});
+    playNext(songId);
   }
 
   player.onended = async () => {
