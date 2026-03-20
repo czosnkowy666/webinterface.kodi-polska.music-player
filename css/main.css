@@ -20,6 +20,13 @@ time, mark, audio, video {
 	vertical-align: baseline;
 }
 
+audio {
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
 body {
     font-size: 1.125rem;
     line-height: 2.0rem;
@@ -70,6 +77,7 @@ ul.navigation li:first-child {
 .list-row {
     border-bottom: 1px solid #6a747a;
     padding: 0.75rem;
+    position: relative;
 }
 
 .panel-list .list-row:last-child {
@@ -85,6 +93,22 @@ ul.navigation li:first-child {
     background-color: #454c50;
 }
 
+.list-action {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2rem;
+    height: 100%;
+}
+
+.list-row.active .list-action {
+    filter: invert() opacity(50%);
+    background-image: url('../assets/equalizer-animate.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
 
 h1 {
     margin: 0.75rem 0;
@@ -142,6 +166,10 @@ input[type="text"] {
     background-color: #454c50;
 }
 
+footer .coptright {
+    padding: 0 1rem;
+}
+
 @media screen and (min-width: 1408px) {
     main {
         max-width: 1344px;
@@ -155,8 +183,7 @@ input[type="text"] {
 
 @media screen and (max-width: 1407px) {
 
-    header,
-    footer {
+    header {
         margin-left: 1rem;
         margin-right: 1rem;
     }

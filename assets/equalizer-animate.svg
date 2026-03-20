@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="800px"
+   height="800px"
+   viewBox="0 0 24 24"
+   fill="none"
+   version="1.1"
+   id="svg3"
+   sodipodi:docname="equalizer-aminate.svg"
+   inkscape:version="1.4.3 (fcd0343856, 2026-01-01)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <rect
+     style="fill:none;stroke:#000000;stroke-width:1.98425;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+     id="rect4"
+     width="3.96"
+     height="18"
+     x="9.9678431"
+     y="2.9613855"
+     ry="0.77598155">
+      <animate attributeName="height" values="18;8;18" dur="1s" repeatCount="indefinite"/>
+      <animate attributeName="y" values="2.9613855;12.9613855;2.9613855" dur="1s" repeatCount="indefinite"/>
+     </rect>
+  <rect
+     style="fill:none;stroke:#000000;stroke-width:1.98425;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+     id="rect4-0"
+     width="3.96"
+     height="12"
+     x="16.984415"
+     y="8.9613867"
+     ry="0.77598155">
+      <animate attributeName="height" values="12;18;8;12" dur="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="y" values="8.9613867;2.9613867;12.9613867;8.9613867" dur="1.5s" repeatCount="indefinite"/>
+     </rect>
+  <rect
+     style="fill:none;stroke:#000000;stroke-width:1.98425;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+     id="rect4-9"
+     width="3.96"
+     height="8.25"
+     x="2.9512713"
+     y="12.711387"
+     ry="0.77598155">
+      <animate attributeName="height" values="8.25;12;8.25;18;8.25" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="y" values="12.711387;8.961387;12.711387;2.961387;12.711387" dur="2s" repeatCount="indefinite"/>     
+     </rect>
+</svg>
