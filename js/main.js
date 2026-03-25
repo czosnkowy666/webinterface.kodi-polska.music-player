@@ -253,7 +253,7 @@
         list = (res && res.sources) || [];
         
       } else {        
-        res = await rpc('Files.GetDirectory', {directory: parnetFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist"],sort: {method:"none",order:"ascending"}});
+        res = await rpc('Files.GetDirectory', {directory: parnetFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist", "lastplayed"],sort: {method:"none",order:"ascending"}});
         list = (res && res.files) || [];
       }
 
