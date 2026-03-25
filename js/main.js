@@ -1,7 +1,8 @@
 
   const RPC_PATH = '/jsonrpc';
   const player = document.getElementById("player");
-
+  let selectedArtistsId = 0
+  let selectedArtistsName = ""
 
   async function rpc(method, params = {}) {
     const r = await fetch(RPC_PATH, {
@@ -40,10 +41,16 @@
       artist = '[Missing Tag]'
     }
     if (artist !== '' && artistsId !== null) {
+      if (album === null) {
+        console.log("changing back artist name", artist, selectedArtistsName)
+        artist = selectedArtistsName
+        artistsId = selectedArtistsId
+      }
+
       const art = document.createElement("span");
       art.textContent = artist
       art.className = 'title-artist no-wrap';
-      art.onclick = () => loadAlbumsForArtist(artistsId, artist);
+      art.onclick = () => loadAlbumsForArtist(artistsId, selectedArtistsName);
       title.appendChild(art)
     }
 
@@ -100,8 +107,9 @@
   }
 
   function handleRowClick(row) {
+    console.log(row)
     if (Object.hasOwn(row, 'songid')) {
-      playSong(row.file, row.title, row.artist[0],row.songid)    
+      playSong(row.file, row.title, row.artist[0],row.songid)
     } else if (Object.hasOwn(row, 'artistid')) {
       loadAlbumsForArtist(row.artistid, row.artist)
     } else if (Object.hasOwn(row, 'albumid')) {
@@ -135,18 +143,25 @@
       });
       const list = (res && res.artists) || [];
 
-      if (!list.length) { setStatus('No artists'); return; }
+      if (!list.length) { 
+        setStatus('No artists')
+        return
+      }
+
       setList(list)
 
       setMainTitle('Artists', null, null)
-      setStatus('');
+      setStatus('')
     } catch (e) {
       console.error(e); setStatus('Error: ' + e.message);
     }
   }
 
   async function loadAlbumsForArtist(artistId, artistName) {
-    setStatus('loading albums…');
+    setStatus('loading albums…')
+    selectedArtistsId = artistId
+    selectedArtistsName = artistName
+
     try {
       const res = await rpc('AudioLibrary.GetAlbums', { properties: ['thumbnail','year','artist'], limits:{ start:0, end:1000 }, filter: {artistid: artistId} });
       const list = (res && res.albums) || [];
@@ -155,14 +170,15 @@
       setList(list)
 
       setMainTitle(artistName, artistId, null)
-      setStatus('');
+      setStatus('')
     } catch (e) {
-      console.error(e); setStatus('Error: ' + e.message);
+      console.error(e)
+      setStatus('Error: ' + e.message)
     }
   }
 
   async function loadSongs(albumId, albumName, artistName) {
-    setStatus('loading songs…');
+    setStatus('loading songs…')
     try {
       const params = { properties: ['title','file','thumbnail','duration','artist','artistid','album','track'], limits:{ start:0, end:10000 }, filter: {albumid: albumId} };
       const res = await rpc('AudioLibrary.GetSongs', params);      
@@ -171,7 +187,7 @@
       if (!list.length) { setStatus('No songs'); return; }
       setList(list)
       
-      setMainTitle(artistName, 'TODO' /* artistId */, albumName)
+      setMainTitle(artistName, selectedArtistsId, albumName)
 
       setStatus('');
     } catch (e) {
