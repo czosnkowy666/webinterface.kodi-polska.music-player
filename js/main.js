@@ -73,6 +73,23 @@
 
   }
 
+  function formatDuration(duration) {
+    out = []
+    if(duration > 3600) {
+      hours = (duration - duration%3600)/3600
+      out.push(hours)
+      duration = duration - hours * 3600
+    }
+    if(duration > 60) {
+      minutes = (duration - duration%60)/60
+      out.push(minutes)
+      duration = duration - minutes * 60
+    }
+    out.push(duration)
+    
+    return out.join(":")
+  }
+
   function setList(list) {
       const templateRow = document.getElementById('tpl-list-row');
       const templatePanel = document.getElementById('tpl-panel');
@@ -86,6 +103,8 @@
       list.forEach(row => {
         const clone = document.importNode(templateRow.content, true);
         const title = clone.querySelector('.list-title')
+        const duration = clone.querySelector('.list-duration')
+        const lastPlayed = clone.querySelector('.list-lastplayed')
 
         //console.log(row)
 
@@ -98,6 +117,12 @@
         }
         if(row.file) {
           title.dataset.file = row.file
+        }
+        if(row.duration) {
+          duration.textContent = formatDuration(row.duration)
+        }
+        if(row.lastplayed) {
+          lastPlayed.textContent = row.lastplayed
         }
 
         title.onclick = () => handleRowClick(row)
@@ -180,7 +205,7 @@
   async function loadSongs(albumId, albumName, artistName) {
     setStatus('loading songs…')
     try {
-      const params = { properties: ['title','file','thumbnail','duration','artist','artistid','album','track'], limits:{ start:0, end:10000 }, filter: {albumid: albumId} };
+      const params = { properties: ['title','file','thumbnail','duration','artist','artistid','album','track', "lastplayed"], limits:{ start:0, end:10000 }, filter: {albumid: albumId} };
       const res = await rpc('AudioLibrary.GetSongs', params);      
       const list = (res && res.songs) || [];
 
@@ -269,7 +294,7 @@
         list = (res && res.sources) || [];
         
       } else {        
-        res = await rpc('Files.GetDirectory', {directory: parnetFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist", "lastplayed"],sort: {method:"none",order:"ascending"}});
+        res = await rpc('Files.GetDirectory', {directory: parnetFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist", "lastplayed",'duration'],sort: {method:"none",order:"ascending"}});
         list = (res && res.files) || [];
       }
 
@@ -336,6 +361,14 @@
 
   player.onended = async () => {    
     bumpPlayCount(player.dataset.songid)
+  };
+
+  player.onstalled = () => {
+    setStatus('Buffering... (Network stalled)');
+  };
+
+  player.onwaiting = () => {
+    setStatus('Buffering... (Waiting for data)');
   };
 
   player.onerror = () => {
