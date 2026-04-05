@@ -88,6 +88,9 @@ ul.navigation li:first-child {
 
 .list-row .list-duration, .list-row .list-action {
     grid-row-start: span 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .panel-list .list-row:last-child {
@@ -104,7 +107,7 @@ ul.navigation li:first-child {
 }
 
 .list-action {
-    width: 1.5lh;
+    width: 1.25lh;
 }
 
 .list-row.active .list-action {
