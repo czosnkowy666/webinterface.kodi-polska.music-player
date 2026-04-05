@@ -3,6 +3,7 @@
   const player = document.getElementById("player");
   let selectedArtistsId = 0
   let selectedArtistsName = ""
+  let historyBack = false
 
   async function rpc(method, params = {}) {
     const r = await fetch(RPC_PATH, {
@@ -282,19 +283,29 @@
     return false
   }
 
-  async function loadFiles(folderName, parnetFolder) {
-    setStatus('loading files…');
-    console.log(parnetFolder)
+  async function loadFiles(folderName, parentFolder) {
+    if (!folderName) {
+      folderName = ''
+    }
+    if (!parentFolder) {
+      parentFolder = ''
+    }
 
+    setStatus('loading files…');
+    console.log(parentFolder, folderName)
+    if (!historyBack) {
+      history.pushState({ files: parentFolder, name: folderName }, "Files:" + parentFolder, "?folder=" + encodeURI(parentFolder));
+      historyBack = false
+    }
     try {
       let res = {};
       let list = []
-      if(!parnetFolder) {
+      if(!parentFolder) {
         res = await rpc('AudioLibrary.GetSources', {});
         list = (res && res.sources) || [];
         
       } else {        
-        res = await rpc('Files.GetDirectory', {directory: parnetFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist", "lastplayed",'duration'],sort: {method:"none",order:"ascending"}});
+        res = await rpc('Files.GetDirectory', {directory: parentFolder, media: "music", properties:["title","file","mimetype","thumbnail","artist", "lastplayed",'duration'],sort: {method:"file",order:"ascending"}});
         list = (res && res.files) || [];
       }
 
@@ -393,3 +404,11 @@
     document.getElementById('nav-playlist').addEventListener('click', loadPlaylist);
     document.getElementById('nav-file').addEventListener('click', (e) => { loadFiles() });
   });
+
+window.addEventListener("popstate", (event) => {
+  if (event.state && "files" in event.state) {
+    historyBack = true
+    loadFiles("", event.state['files'])
+    console.log("going back", event.state)
+  }
+});
