@@ -149,6 +149,7 @@
     }
 
   }
+
   function formatLabel(row) {
     let label = row.label
     if (row.artist && Array.isArray(row.artist)) {
@@ -158,9 +159,13 @@
     return label    
   } 
 
-
   async function loadArtists() {
     setStatus('loading artists…');
+    if (!historyBack) {
+      history.pushState({ artist: "/"}, "Artists: /", "?artist=");
+    }
+    historyBack = false
+
     try {
       const res = await rpc('AudioLibrary.GetArtists', { 
         properties: ['thumbnail'], 
@@ -188,6 +193,12 @@
     selectedArtistsId = artistId
     selectedArtistsName = artistName
 
+    if (!historyBack) {
+      history.pushState({ artist: artistId, artistName: artistName}, "Artists: " + artistId, "?artist=" + artistId);
+    }
+    historyBack = false
+
+
     try {
       const res = await rpc('AudioLibrary.GetAlbums', { properties: ['thumbnail','year','artist'], limits:{ start:0, end:1000 }, filter: {artistid: artistId} });
       const list = (res && res.albums) || [];
@@ -205,6 +216,11 @@
 
   async function loadSongs(albumId, albumName, artistName) {
     setStatus('loading songs…')
+    if (!historyBack) {
+      history.pushState({ album: albumId, albumName: albumName, artistName: artistName }, "Album:" + albumId, "?album=" + albumId);
+    }
+    historyBack = false
+
     try {
       const params = { properties: ['title','file','thumbnail','duration','artist','artistid','album','track', "lastplayed"], limits:{ start:0, end:10000 }, filter: {albumid: albumId} };
       const res = await rpc('AudioLibrary.GetSongs', params);      
@@ -252,6 +268,11 @@
     // it need to be local in local storage playlist that could be exported to m3u and then uploaded to kodi
     // maybe it can read existing playlist from kodi though file api not it will be in rad only mode 
     setStatus('loading playlist…');
+    if (!historyBack) {
+      history.pushState({ playlist: "/"}, "Playlist: /", "?playlist=");
+    }
+    historyBack = false
+
     cleanPanels();
     try {
       startFolder = 'special://musicplaylists/'
@@ -295,8 +316,9 @@
     console.log(parentFolder, folderName)
     if (!historyBack) {
       history.pushState({ files: parentFolder, name: folderName }, "Files:" + parentFolder, "?folder=" + encodeURI(parentFolder));
-      historyBack = false
     }
+    historyBack = false
+
     try {
       let res = {};
       let list = []
@@ -406,9 +428,37 @@
   });
 
 window.addEventListener("popstate", (event) => {
-  if (event.state && "files" in event.state) {
-    historyBack = true
-    loadFiles("", event.state['files'])
-    console.log("going back", event.state)
+  if (!event.state) {
+    return
   }
+  console.log("going back", event.state)
+  const state = event.state
+  if ("artist" in state) {
+    historyBack = true
+    if(state['artist'] == '/') {
+      loadArtists()
+    } else {
+      loadAlbumsForArtist(state["artist"], state["artistName"])
+    }
+    return
+  }
+
+  if ("album" in state) {
+    historyBack = true
+    loadSongs(state["album"])
+    return
+  }
+
+  if ("playlist" in state) {
+    historyBack = true
+    loadPlaylist()
+    return
+  }
+
+  if ("files" in state) {
+    historyBack = true
+    loadFiles("", state['files'])
+    return
+  }
+
 });
