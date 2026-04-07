@@ -238,6 +238,9 @@
   }
 
   async function playSong(songFile, title, artist, id) {
+    if (player.duration > 0 && !player.paused) {
+      document.querySelectorAll(".list-row.active").forEach(e => e.classList.remove('active'));  
+    }
     player.src = '/vfs/' + encodeURIComponent(songFile);
     player.dataset.title = title;
     player.dataset.artist = artist;
@@ -385,11 +388,10 @@
       console.log("bumpPlayCount: no song id")
       return
     }
-
+    playNext(songId);
     const resGet = await rpc('AudioLibrary.GetSongDetails',  {"songid": Number(songId), "properties": ["album", "albumid", "artist","lastplayed","playcount"]});
     count = Number(resGet['songdetails']['playcount']) + 1
     const resSet = await rpc('AudioLibrary.SetSongDetails',  {"songid": Number(songId), "lastplayed": getDateTime(), "playcount": count});
-    playNext(songId);
   }
 
   player.onended = async () => {    
