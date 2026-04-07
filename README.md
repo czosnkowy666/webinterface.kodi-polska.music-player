@@ -5,15 +5,23 @@ Kodi web interface for playing your music collection, designed with a mobile-fir
 - Listing artists  
 - Listing an artist’s albums  
 - Listing songs from an album  
+- Listing files
+- Listing playlists
 - Playing songs  
 - Showing song metadata in the phone’s media notification  
 - Update a song’s play count and last played date
+- Back button 
+- Shows song duration
+- Shows album duration
+- Shows last played date
 
 ## What is missing (TODO)
 - Deep linking: `#album/<id>`, `#artist/<id>`, or `#file/<id?>`  
 - Artwork support  
 - Breadcrumbs for easier navigation back to the previous screen or start  
-- File browsing option  
-- Updated CSS with a dark green theme and better mobile support  
+- Updated CSS with a dark green theme and better mobile support 
 - sort albums by track (especialy on various artists albums)
 - add artist name on Various artists albums
+- pause icon
+- fix play next issues when mobile device is in sleep mode
+- simple search/filter 
