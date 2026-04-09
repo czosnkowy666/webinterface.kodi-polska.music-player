@@ -8,6 +8,14 @@ class MusicPLayer {
   }
 
   init() {
+    this.player.onplay = async () => {
+      this.songStatusUpdate(1)
+    };
+
+    this.player.onpause = async () => {
+      this.songStatusUpdate(0)
+    };
+
     this.player.onended = async () => {
       this.bumpPlayCount(this.player.dataset.songid)
     };
@@ -15,11 +23,11 @@ class MusicPLayer {
     this.player.onstalled = () => {
       this.setStatus('Buffering... (Network stalled)');
     };
-
+/*
     this.player.onwaiting = () => {
       this.setStatus('Buffering... (Waiting for data)');
     };
-
+*/
     this.player.onerror = () => {
       const err = this.player.error;
       if (err) {
@@ -275,14 +283,17 @@ class MusicPLayer {
     if (this.player.duration > 0 && !this.player.paused) {
       document.querySelectorAll(".list-row.active").forEach(e => e.classList.remove('active'));
     }
+    if (this.player.duration > 0 && this.player.paused) {
+      document.querySelectorAll(".list-row.paused").forEach(e => e.classList.remove('paused'));
+    }
+
     this.player.src = '/vfs/' + encodeURIComponent(songFile);
     this.player.dataset.title = title;
     this.player.dataset.artist = artist;
     this.player.dataset.file = songFile;
     this.player.dataset.songid = id;
+    this.songStatusUpdate(1);
     this.player.play();
-    const currentRow = document.querySelector('div:has(> h3[data-song-id="' + id + '"])');
-    currentRow.classList.add('active')
 
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
@@ -397,6 +408,7 @@ class MusicPLayer {
     date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     return date
   }
+
   playNext(songId) {
     console.log("current song was:" + songId)
     const currentRow = document.querySelector('div:has(> h3[data-song-id="' + songId + '"])');
@@ -426,6 +438,23 @@ class MusicPLayer {
     const resGet = await this.rpc('AudioLibrary.GetSongDetails', { "songid": Number(songId), "properties": ["album", "albumid", "artist", "lastplayed", "playcount"] });
     count = Number(resGet['songdetails']['playcount']) + 1
     const resSet = await this.rpc('AudioLibrary.SetSongDetails', { "songid": Number(songId), "lastplayed": getDateTime(), "playcount": count });
+  }
+
+  songStatusUpdate(status) {    
+    const id = this.player.dataset.songid;
+    const currentRow = document.querySelector('div:has(> h3[data-song-id="' + id + '"])');
+    if (status == 0) {
+      currentRow.classList.remove('active');
+      currentRow.classList.add('paused');
+      return;
+    }
+
+    if (status == 1) {
+      currentRow.classList.remove('paused');
+      currentRow.classList.add('active');
+      return true;
+    }
+
   }
 
   async setStatus(t) {
