@@ -5,6 +5,7 @@ class MusicPLayer {
     this.selectedArtistsId = 0;
     this.selectedArtistsName = "";
     this.historyBack = false;
+    this.currentList = [];
   }
 
   init() {
@@ -298,7 +299,7 @@ class MusicPLayer {
     if ("mediaSession" in navigator) {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: title,
-        artist: artist, //TODO get artists name 
+        artist: artist,
         //        artwork: [
         //          { src: artwork, sizes: "512x512", type: "image/png" }
         //        ]
@@ -405,11 +406,11 @@ class MusicPLayer {
     hours = String(hours).padStart(2, '0');
     minutes = String(minutes).padStart(2, '0');
     seconds = String(seconds).padStart(2, '0');
-    date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+    const date = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     return date
   }
 
-  playNext(songId) {
+  async playNext(songId) {
     console.log("current song was:" + songId)
     const currentRow = document.querySelector('div:has(> h3[data-song-id="' + songId + '"])');
     currentRow.classList.remove('active')
@@ -434,10 +435,10 @@ class MusicPLayer {
       console.log("bumpPlayCount: no song id")
       return
     }
-    playNext(songId);
+    this.playNext(songId);
     const resGet = await this.rpc('AudioLibrary.GetSongDetails', { "songid": Number(songId), "properties": ["album", "albumid", "artist", "lastplayed", "playcount"] });
-    count = Number(resGet['songdetails']['playcount']) + 1
-    const resSet = await this.rpc('AudioLibrary.SetSongDetails', { "songid": Number(songId), "lastplayed": getDateTime(), "playcount": count });
+    const count = Number(resGet['songdetails']['playcount']) + 1
+    const resSet = await this.rpc('AudioLibrary.SetSongDetails', { "songid": Number(songId), "lastplayed": this.getDateTime(), "playcount": count });
   }
 
   songStatusUpdate(status) {    
