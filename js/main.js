@@ -23,6 +23,21 @@ class MusicPLayer {
 
     this.player.onstalled = () => {
       this.setStatus('Buffering... (Network stalled)');
+      console.log("stalled buffer resetting");
+      const resumeAt = this.player.currentTime;
+      const currentUrl = this.player.src;
+    
+      this.player.pause();
+      this.player.src = ""; 
+      this.player.load(); // Force the browser to reset its internal state
+    
+      // 3. Re-assign the URL and seek
+      this.player.src = currentUrl; 
+      this.player.load();
+      this.player.currentTime = resumeAt;
+      
+      // 4. Restart playback
+      this.player.play().catch(e => console.error("Auto-play blocked:", e));      
     };
 /*
     this.player.onwaiting = () => {
@@ -265,7 +280,7 @@ class MusicPLayer {
     this.historyBack = false
 
     try {
-      const params = { properties: ['title', 'file', 'thumbnail', 'duration', 'artist', 'artistid', 'album', 'track', "lastplayed"], limits: { start: 0, end: 10000 }, filter: { albumid: albumId } };
+      const params = { properties: ['title', 'file', 'thumbnail', 'duration', 'artist', 'artistid', 'album', 'track', "lastplayed", 'playcount'], limits: { start: 0, end: 10000 }, filter: { albumid: albumId } };
       const res = await this.rpc('AudioLibrary.GetSongs', params);
       const list = (res && res.songs) || [];
 
@@ -280,36 +295,39 @@ class MusicPLayer {
     }
   }
 
-  async playSong(songFile, title, artist, id) {
+  playSong(songFile, title, artist, id) {
     if (this.player.duration > 0 && !this.player.paused) {
       document.querySelectorAll(".list-row.active").forEach(e => e.classList.remove('active'));
     }
     if (this.player.duration > 0 && this.player.paused) {
       document.querySelectorAll(".list-row.paused").forEach(e => e.classList.remove('paused'));
     }
+    try {
+      this.player.src = '/vfs/' + encodeURIComponent(songFile);
+      this.player.dataset.title = title;
+      this.player.dataset.artist = artist;
+      this.player.dataset.file = songFile;
+      this.player.dataset.songid = id;
+      this.songStatusUpdate(1);
+      this.player.play();
 
-    this.player.src = '/vfs/' + encodeURIComponent(songFile);
-    this.player.dataset.title = title;
-    this.player.dataset.artist = artist;
-    this.player.dataset.file = songFile;
-    this.player.dataset.songid = id;
-    this.songStatusUpdate(1);
-    this.player.play();
+      if ("mediaSession" in navigator) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: title,
+          artist: artist,
+          //        artwork: [
+          //          { src: artwork, sizes: "512x512", type: "image/png" }
+          //        ]
+        });
 
-    if ("mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: title,
-        artist: artist,
-        //        artwork: [
-        //          { src: artwork, sizes: "512x512", type: "image/png" }
-        //        ]
-      });
-
-      navigator.mediaSession.setActionHandler("play", () => this.player.play());
-      navigator.mediaSession.setActionHandler("pause", () => this.player.pause());
-      navigator.mediaSession.setActionHandler("stop", () => this.player.pause());
+        navigator.mediaSession.setActionHandler("play", () => this.player.play());
+        navigator.mediaSession.setActionHandler("pause", () => this.player.pause());
+        navigator.mediaSession.setActionHandler("stop", () => this.player.pause());
+      }      
+    } catch (error) {
+      console.error("play song error");
+      console.error(error.message);
     }
-
   }
 
   async loadPlaylist() {
@@ -376,7 +394,7 @@ class MusicPLayer {
         list = (res && res.sources) || [];
 
       } else {
-        res = await this.rpc('Files.GetDirectory', { directory: parentFolder, media: "music", properties: ["title", "file", "mimetype", "thumbnail", "artist", "lastplayed", 'duration'], sort: { method: "file", order: "ascending" } });
+        res = await this.rpc('Files.GetDirectory', { directory: parentFolder, media: "music", properties: ["title", "file", "mimetype", "thumbnail", "artist", "lastplayed", 'playcount', 'duration'], sort: { method: "file", order: "ascending" } });
         list = (res && res.files) || [];
       }
 
