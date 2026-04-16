@@ -60,6 +60,8 @@ class MusicPLayer {
     document.getElementById('nav-artist').addEventListener('click', (e) => { this.loadArtists() });
     document.getElementById('nav-playlist').addEventListener('click', (e) => { this.loadPlaylist() });
     document.getElementById('nav-file').addEventListener('click', (e) => { this.loadFiles() });
+    document.getElementById('nav-search').addEventListener('click', (e) => { this.toggleSearch(1) });
+    document.querySelector('#filter input').addEventListener('input', (e) => { this.filterList(e) });
 
     window.addEventListener("popstate", (event) => { this.historyHandler(event) });
   }
@@ -220,6 +222,8 @@ class MusicPLayer {
 
   async loadArtists() {
     this.setStatus('loading artists…');
+    this.toggleSearch(0);
+
     if (!this.historyBack) {
       history.pushState({ artist: "/" }, "Artists: /", "?artist=");
     }
@@ -248,7 +252,9 @@ class MusicPLayer {
   }
 
   async loadAlbumsForArtist(artistId, artistName) {
-    this.setStatus('loading albums…')
+    this.setStatus('loading albums…');
+    this.toggleSearch(0);
+    
     this.selectedArtistsId = artistId
     this.selectedArtistsName = artistName
 
@@ -273,7 +279,9 @@ class MusicPLayer {
   }
 
   async loadSongs(albumId, albumName, artistName) {
-    this.setStatus('loading songs…')
+    this.setStatus('loading songs…');
+    this.toggleSearch(0);
+    
     if (!this.historyBack) {
       history.pushState({ album: albumId, albumName: albumName, artistName: artistName }, "Album:" + albumId, "?album=" + albumId);
     }
@@ -335,6 +343,8 @@ class MusicPLayer {
     // it need to be local in local storage playlist that could be exported to m3u and then uploaded to kodi
     // maybe it can read existing playlist from kodi though file api not it will be in rad only mode 
     this.setStatus('loading playlist…');
+    this.toggleSearch(0);
+
     if (!this.historyBack) {
       history.pushState({ playlist: "/" }, "Playlist: /", "?playlist=");
     }
@@ -380,6 +390,8 @@ class MusicPLayer {
     }
 
     this.setStatus('loading files…');
+    this.toggleSearch(0);
+    
     console.log(parentFolder, folderName)
     if (!this.historyBack) {
       history.pushState({ files: parentFolder, name: folderName }, "Files:" + parentFolder, "?folder=" + encodeURI(parentFolder));
@@ -428,7 +440,27 @@ class MusicPLayer {
     return date
   }
 
-  async playNext(songId) {
+  getNextActiveRow(currentRow) {
+    let nextActiveRow = null;
+    while (nextActiveRow == null || currentRow.nextElementSibling != null) {
+      const nextRow = currentRow.nextElementSibling;
+      if (nextRow == null) {
+        break
+      }
+
+      if (!nextRow.classList.contains("hide")) {
+        nextActiveRow = nextRow;
+        break
+      } else {
+        currentRow = nextRow;
+      }
+    }
+
+    return nextActiveRow;
+    
+  }
+
+  playNext(songId) {
     console.log("current song was:" + songId)
     const currentRow = document.querySelector('div:has(> h3[data-song-id="' + songId + '"])');
     currentRow.classList.remove('active')
@@ -438,7 +470,7 @@ class MusicPLayer {
       return
     }
 
-    const nextRow = currentRow.nextElementSibling;
+    const nextRow = this.getNextActiveRow(currentRow);
     if (!nextRow) {
       console.log("missing next row")
       return
@@ -513,6 +545,39 @@ class MusicPLayer {
       this.loadFiles("", state['files'])
       return
     }
+
+  }
+
+  toggleSearch(type = 1) {
+    const filterDev = document.querySelector("#filter");
+    const inputEl = filterDev.querySelector('input');
+    if (type == 1) {
+      filterDev.classList.add("active")
+      inputEl.value = '';
+      inputEl.focus();
+      return 
+    } else {
+      filterDev.classList.remove("active")
+      inputEl.value = '';
+      return 
+    }
+  }
+
+  filterList(e) {
+    console.log("filtering list")
+    let filterValue = e.target.value;
+
+    const rows = document.querySelectorAll(".panel-list .list-row");
+    rows.forEach(row => {
+      const title = row.querySelector("h3").textContent.toLowerCase();
+      const match = title.includes(filterValue.toLowerCase());
+
+      if (!match) {
+        row.classList.add("hide");
+      } else {
+        row.classList.remove("hide");
+      }
+    });
 
   }
 }
